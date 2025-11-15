@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Signals - Telegram Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #0e1621;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .telegram-container {
+            max-width: 420px;
+            margin: 0 auto;
+            background: #17212b;
+            min-height: 100vh;
+        }
+
+        .chat-header {
+            background: #17212b;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #0e1621;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .header-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .header-default {
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .back-arrow {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-arrow img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .bot-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #2b5278;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bot-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .bot-info {
+            flex: 1;
+        }
+
+        .header-icons {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .header-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .bot-name {
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .bot-status {
+            color: #6c7883;
+            font-size: 13px;
+        }
+
+        .chat-messages {
+            padding: 12px 8px 80px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background-image: url('wal.png');
+            background-size: auto;
+            background-position: center;
+            background-repeat: repeat;
+            position: relative;
+            min-height: calc(100vh - 60px);
+        }
+
+        .message-bubble {
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(145deg, #1a2631 0%, #253745 50%, #5d6774 100%);
+            border-radius: 12px;
+            padding: 8px 12px;
+            max-width: 90%;
+            align-self: flex-start;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            margin-left: 8px;
+        }
+
+        .message-bubble::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 8px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 8px 8px 0;
+            border-color: transparent #14242c transparent transparent;
+        }
+
+        .message-time {
+            color: #ffffff;
+            font-size: 11px;
+            text-align: right;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .signal-content {
+            color: #ffffff;
+        }
+
+        .trophy-line {
+            color: #ffffff;
+            font-size: 13px;
+            text-align: left;
+            margin: 8px 0;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 8px 0;
+            background: #0a0e14;
+            min-height: 160px;
+            display: block;
+        }
+
+        .signal-details {
+            margin: 8px 0;
+            line-height: 1.8;
+        }
+
+        .detail-line {
+            color: #e8e8e8;
+            font-size: 14px;
+            margin: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .emoji {
+            font-size: 15px;
+            display: inline-block;
+        }
+
+        .sell-type {
+            color: #e8e8e8;
+            font-weight: 600;
+        }
+
+        .buy-type {
+            color: #e8e8e8;
+            font-weight: 600;
+        }
+
+        .rsi-indicator {
+            background: transparent;
+            border: none;
+            padding: 8px 0;
+            margin: 8px 0;
+            color: #e8e8e8;
+            font-size: 13px;
+        }
+
+        .message-input-container {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 420px;
+            background: #17212b;
+            padding: 8px 12px;
+            border-top: 1px solid #0e1621;
+            z-index: 9999;
+        }
+
+        .message-input-wrapper {
+            background-image: url('we.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            gap: 8px;
+            height: 48px;
+            position: relative;
+            z-index: 10000;
+        }
+
+        .message-input-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 24px;
+        }
+
+        .attach-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .attach-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .message-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .message-input::placeholder {
+            color: #6c7883;
+        }
+
+        .emoji-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .emoji-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .voice-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .voice-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .pb-input {
+            padding-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="telegram-container">
+        <!-- Header -->
+        <div class="chat-header">
+            <img src="al.png" alt="Header" class="header-image" 
+                 onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'header-default\'><div class=\'back-arrow\'><img src=\'no.png\' alt=\'Back\' onerror=\'this.parentElement.innerHTML=&quot;←&quot;\'></div><div class=\'bot-avatar\'><img src=\'logo.png\' alt=\'Bot Logo\' onerror=\'this.parentElement.innerHTML=&quot;FX&quot;\'></div><div class=\'bot-info\'><div class=\'bot-name\'>Hunter FX Swing</div><div class=\'bot-status\'>bot</div></div><div class=\'header-icons\'><div class=\'header-icon\'><img src=\'k.png\' alt=\'Search\' onerror=\'this.parentElement.innerHTML=&quot;🔍&quot;\'></div><div class=\'header-icon\'><img src=\'th.png\' alt=\'Menu\' onerror=\'this.parentElement.innerHTML=&quot;⋮&quot;\'></div></div></div>'">
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages pb-input">
+            <!-- Message 1 - EURJPY -->
+            <div class="message-bubble">
+                <div class="signal-content">
+                    <img src="EURJPY.png" alt="Chart" class="chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                    
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+
+                    <div class="signal-details">
+                        <div class="detail-line">
+                            <span class="emoji">⏰</span>
+                            <span>Time: 12:00</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📊</span>
+                            <span>Pair: EURJPY</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✨</span>
+                            <span>Style: Swing 1H</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📈</span>
+                            <span>Type: <span class="sell-type">SELL 🔴</span></span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🎯</span>
+                            <span>Entry: 179.74300</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🛑</span>
+                            <span>Stop Loss: 179.98400</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 1: 179.50200</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 2: 179.26100</span>
+                        </div>
+                    </div>
+
+                    <div class="rsi-indicator">
+                        📊 RSI (51.8) | Last Overbought (SELL) before 25 candle
+                    </div>
+
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+                </div>
+                <span class="message-time">12:00 PM</span>
+            </div>
+
+            <!-- Message 2 - AUDUSD -->
+            <div class="message-bubble">
+                <div class="signal-content">
+                    <img src="AUDUSD.png" alt="Chart" class="chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                    
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+
+                    <div class="signal-details">
+                        <div class="detail-line">
+                            <span class="emoji">⏰</span>
+                            <span>Time: 12:00</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📊</span>
+                            <span>Pair: AUDUSD</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✨</span>
+                            <span>Style: Swing 1H</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📈</span>
+                            <span>Type: <span class="buy-type">BUY 🟢</span></span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🎯</span>
+                            <span>Entry: 0.65297</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🛑</span>
+                            <span>Stop Loss: 0.65178</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 1: 0.65416</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 2: 0.65535</span>
+                        </div>
+                    </div>
+
+                    <div class="rsi-indicator">
+                        📊 RSI (42.0) | Last Overbought (SELL) before 25 candle
+                    </div>
+
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+                </div>
+                <span class="message-time">12:00 PM</span>
+            </div>
+
+            <!-- Message 3 - EURTRY -->
+            <div class="message-bubble">
+                <div class="signal-content">
+                    <img src="EURTRY.png" alt="Chart" class="chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                    
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+
+                    <div class="signal-details">
+                        <div class="detail-line">
+                            <span class="emoji">⏰</span>
+                            <span>Time: 11:01</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📊</span>
+                            <span>Pair: EURTRY</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✨</span>
+                            <span>Style: Swing 1H</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📈</span>
+                            <span>Type: <span class="sell-type">SELL 🔴</span></span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🎯</span>
+                            <span>Entry: 49.28002</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🛑</span>
+                            <span>Stop Loss: 49.33750</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 1: 49.22254</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 2: 49.16506</span>
+                        </div>
+                    </div>
+
+                    <div class="rsi-indicator">
+                        📊 RSI (71.1) | Last Overbought (SELL) before 0 candle
+                    </div>
+
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+                </div>
+                <span class="message-time">11:01 AM</span>
+            </div>
+
+            <!-- Message 4 - USDNOK -->
+            <div class="message-bubble">
+                <div class="signal-content">
+                    <img src="USDNOK.png" alt="Chart" class="chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                    
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+
+                    <div class="signal-details">
+                        <div class="detail-line">
+                            <span class="emoji">⏰</span>
+                            <span>Time: 07:00</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📊</span>
+                            <span>Pair: USDNOK</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✨</span>
+                            <span>Style: Swing 1H</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📈</span>
+                            <span>Type: <span class="buy-type">BUY 🟢</span></span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🎯</span>
+                            <span>Entry: 10.00326</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🛑</span>
+                            <span>Stop Loss: 9.99031</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 1: 10.01621</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 2: 10.02916</span>
+                        </div>
+                    </div>
+
+                    <div class="rsi-indicator">
+                        📊 RSI (35.2) | Last Oversold  (BUY) before 11 candle
+                    </div>
+
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+                </div>
+                <span class="message-time">07:00 AM</span>
+            </div>
+
+            <!-- Message 5 - USDCAD -->
+            <div class="message-bubble">
+                <div class="signal-content">
+                    <img src="USDCAD.png" alt="Chart" class="chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                    
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+
+                    <div class="signal-details">
+                        <div class="detail-line">
+                            <span class="emoji">⏰</span>
+                            <span>Time: 04:00</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📊</span>
+                            <span>Pair: USDCAD</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✨</span>
+                            <span>Style: Swing 1H</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📈</span>
+                            <span>Type: <span class="sell-type">SELL 🔴</span></span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🎯</span>
+                            <span>Entry: 1.40342</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🛑</span>
+                            <span>Stop Loss: 1.40447</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 1: 1.40237</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 2: 1.40132</span>
+                        </div>
+                    </div>
+
+                    <div class="rsi-indicator">
+                        📊 RSI (65.0) | Last Overbought (SELL) before 7 candle
+                    </div>
+
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+                </div>
+                <span class="message-time">04:00 AM</span>
+            </div>
+
+            <!-- Message 6 - GBPNZD -->
+            <div class="message-bubble">
+                <div class="signal-content">
+                    <img src="GBPNZD.png" alt="Chart" class="chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                    
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+
+                    <div class="signal-details">
+                        <div class="detail-line">
+                            <span class="emoji">⏰</span>
+                            <span>Time: 02:02</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📊</span>
+                            <span>Pair: GBPNZD</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✨</span>
+                            <span>Style: Swing 1H</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📈</span>
+                            <span>Type: <span class="sell-type">SELL 🔴</span></span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🎯</span>
+                            <span>Entry: 2.32869</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🛑</span>
+                            <span>Stop Loss: 2.33595</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 1: 2.32143</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 2: 2.31417</span>
+                        </div>
+                    </div>
+
+                    <div class="rsi-indicator">
+                        📊 RSI (56.0) | Last Overbought (SELL) before 5 candle
+                    </div>
+
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+                </div>
+                <span class="message-time">02:02 AM</span>
+            </div>
+
+            <!-- Message 7 - GBPCHF -->
+            <div class="message-bubble">
+                <div class="signal-content">
+                    <img src="GBPCHF.png" alt="Chart" class="chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                    
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+
+                    <div class="signal-details">
+                        <div class="detail-line">
+                            <span class="emoji">⏰</span>
+                            <span>Time: 23:00</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📊</span>
+                            <span>Pair: GBPCHF</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✨</span>
+                            <span>Style: Swing 1H</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📈</span>
+                            <span>Type: <span class="buy-type">BUY 🟢</span></span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🎯</span>
+                            <span>Entry: 1.04560</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🛑</span>
+                            <span>Stop Loss: 1.04454</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 1: 1.04666</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 2: 1.04772</span>
+                        </div>
+                    </div>
+
+                    <div class="rsi-indicator">
+                        📊 RSI (37.5) | Last Oversold  (BUY) before 27 candle
+                    </div>
+
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+                </div>
+                <span class="message-time">11:00 PM</span>
+            </div>
+
+            <!-- Message 8 - AUDCAD -->
+            <div class="message-bubble">
+                <div class="signal-content">
+                    <img src="AUDCAD.png" alt="Chart" class="chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                    
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+
+                    <div class="signal-details">
+                        <div class="detail-line">
+                            <span class="emoji">⏰</span>
+                            <span>Time: 22:00</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📊</span>
+                            <span>Pair: AUDCAD</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✨</span>
+                            <span>Style: Swing 1H</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">📈</span>
+                            <span>Type: <span class="sell-type">SELL 🔴</span></span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🎯</span>
+                            <span>Entry: 0.91626</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">🛑</span>
+                            <span>Stop Loss: 0.92054</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 1: 0.91198</span>
+                        </div>
+                        <div class="detail-line">
+                            <span class="emoji">✅</span>
+                            <span>Target 2: 0.90770</span>
+                        </div>
+                    </div>
+
+                    <div class="rsi-indicator">
+                        📊 RSI (41.5) | Last Overbought (SELL) before 11 candle
+                    </div>
+
+                    <div class="trophy-line">🏆 ════════════════ 🏆</div>
+                </div>
+                <span class="message-time">10:00 PM</span>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="message-input-container">
+            <div class="message-input-wrapper">
+
+                </span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

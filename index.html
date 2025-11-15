@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hunter </title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* تحديث ألوان الوضع الفاتح */
+    body:not(.dark-mode) {
+      background-color: var(--light-color);
+    }
+    
+    body:not(.dark-mode) .header {
+      background-color: var(--light-color);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    }
+
+    body:not(.dark-mode) .feature-card,
+    body:not(.dark-mode) .course-card,
+    body:not(.dark-mode) .forex-feature {
+      background-color: var(--light-color);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+    }
+
+    body:not(.dark-mode) .footer {
+      background-color: var(--light-color);
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    /* تحديث ألوان النصوص في الوضع الفاتح */
+    body:not(.dark-mode) {
+      color: var(--dark-color);
+    }
+
+    body:not(.dark-mode) a {
+      color: var(--dark-color);
+    }
+
+    /* تحديث ألوان الأزرار في الوضع الفاتح */
+    body:not(.dark-mode) .btn-primary {
+      background-color: var(--primary-color);
+      color: var(--dark-color);
+    }
+
+    body:not(.dark-mode) .btn-primary:hover {
+      background-color: var(--primary-dark);
+      box-shadow: 0 5px 15px rgba(254, 209, 0, 0.2);
+    }
+
+    /* إضافة تأثيرات حركية للقسم الرئيسي */
+    .hero {
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* تحديث محتوى القسم الرئيسي */
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* إضافة تأثيرات حركية للقسم الرئيسي */
+    .hero-content h1 {
+      animation: fadeInDown 1s ease-out;
+      position: relative;
+    }
+
+    .hero-content h2 {
+      animation: fadeInUp 1s ease-out 0.5s;
+      animation-fill-mode: both;
+      position: relative;
+    }
+
+    .hero-content .btn-primary {
+      animation: none; /* إيقاف حركة القفز التي كانت تؤثر على القسم */
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-content .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .hero-content .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        120deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+      );
+      transition: 0.5s;
+    }
+
+    .hero-content .btn-primary:hover::before {
+      left: 100%;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .map-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    /* إضافة علم السعودية بجانب اللغة العربية */
+    a[id^="ar-link"]::before {
+      content: '';
+      display: inline-block;
+      width: 1.33em; /* عرض العلم */
+      height: 1em;   /* ارتفاع العلم */
+      margin-right: 0.5em; /* مسافة بين العلم والنص */
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600"><rect width="900" height="600" fill="#006c35"/><text fill="#fff" font-size="120" font-family="sans-serif"><tspan x="450" y="350" text-anchor="middle">لَا إِلٰهَ إِلَّا الله، مُحَمَّدٌ رَسُوْلُ الله</tspan></text><path d="M100 470 h700 l-30 -20 h-640 l-30 20" fill="#fff"/><path d="M100 470 h700 l-15 -10 h-670 l-15 10" fill="#006c35"/></svg>');
+      background-size: contain;
+      background-repeat: no-repeat;
+      vertical-align: middle;
+    }
+
+    /* إخفاء العلم في قائمة الجوال لتجنب التكرار */
+    .mobile-language-switcher a[id^="ar-link"]::before {
+      display: none;
+    }
+    .language-switcher a {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    /* نقل الأنماط المضمنة إلى هنا */
+      body, html {
+        margin: 0;
+        padding: 0;
+        /* height: 100%; تمت إزالة هذا لأنه قد يسبب مشاكل في التخطيط العام */
+    }
+
+    .full-screen-image {
+        width: 100%;
+        object-fit: cover; /* يضمن أن الصورة تملأ الشاشة دون أن يتم تشويهها */
+        }
+
+    /* تخصيص خلفية قسم مميزات البوت */
+    .hunter-bot-features {
+        background-color: #111; /* خلفية سوداء/داكنة */
+        color: #fff; /* لون نص أبيض لسهولة القراءة */
+        padding: 30px;
+        border-radius: 15px;
+    }
+
+    /* تخصيص خلفية قسم بوت الفوركس بأكمله */
+    .hunter-bot-section {
+        background: linear-gradient(145deg, #2c3e50, #1a252f); /* تدرج لوني من الرمادي الداكن إلى الأسود المائل للزرقة */
+        padding: 60px 0;
+        border-radius: 20px;
+    }
+
+    /* ===== أنماط قسم البوت المنسوخة من mhm/index.html ===== */
+    .mhm-telegram-container {
+        max-width: 480px; /* تم زيادة العرض لتحسين التناسب */
+        margin: 0 auto;
+        background: #17212b;
+        min-height: 100vh;
+        border-radius: 15px;
+        overflow: hidden;
+        height: 595px; /* تعديل الارتفاع ليتناسب مع الهيدر الجديد */
+        height: 580px; /* إعادة ضبط الارتفاع */
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mhm-chat-header {
+        background: #17212b;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid #0e1621;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        height: auto; /* السماح للحاوية بالتكيف مع حجم الصورة */
+        overflow: hidden;
+    }
+
+    .mhm-header-image {
+        width: 100%; /* جعل الصورة تملأ عرض الحاوية */
+        height: auto; /* الحفاظ على نسبة الأبعاد */
+        display: block; /* عرض الصورة كعنصر أساسي */
+    }
+
+    .mhm-header-default {
+        /* هذا الكلاس للـ fallback فقط، يمكن تبسيط أنماطه أو تركها كما هي */
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .mhm-bot-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .mhm-bot-info {
+        flex: 1;
+    }
+
+    .mhm-bot-name {
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 500;
+    }
+
+    .mhm-bot-status {
+        color: #6c7883;
+        font-size: 13px;
+    }
+
+    .mhm-chat-messages {
+        padding: 12px 8px 20px 8px; /* تقليل الحشو السفلي */
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background-image: url('mhm/wal.png');
+        background-size: auto;
+        background-position: center;
+        background-repeat: repeat;
+        position: relative;
+        flex-grow: 1; /* للسماح بالتمدد */
+        overflow-y: auto; /* إضافة سكرول عند الحاجة */
+        /* تخصيص شريط التمرير لمتصفح فايرفوكس */
+        scrollbar-width: thin;
+        scrollbar-color: #2b5278 #17212b;
+    }
+
+    /* تخصيص شريط التمرير لمتصفحات Webkit (كروم، سفاري) */
+    .mhm-chat-messages::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .mhm-chat-messages::-webkit-scrollbar-track {
+        background: #17212b; /* لون مسار الشريط مطابق للخلفية */
+    }
+
+    .mhm-chat-messages::-webkit-scrollbar-thumb {
+        background-color: #2b5278; /* لون الشريط نفسه */
+        border-radius: 10px;
+        border: 2px solid #17212b; /* لإعطاء حواف حول الشريط */
+    }
+
+    .mhm-message-bubble {
+        position: relative;
+        z-index: 1;
+        background: linear-gradient(145deg, #1a2631 0%, #253745 50%, #5d6774 100%);
+        border-radius: 12px;
+        padding: 8px 12px;
+        max-width: 90%;
+        align-self: flex-start;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        margin-left: 8px;
+    }
+
+    .mhm-message-bubble::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 8px;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 0 8px 8px 0;
+        border-color: transparent #14242c transparent transparent;
+    }
+
+    .mhm-message-time {
+        color: #ffffff;
+        font-size: 11px;
+        text-align: right;
+        margin-top: 4px;
+        display: block;
+    }
+
+    .mhm-signal-content {
+        color: #ffffff;
+    }
+
+    .mhm-trophy-line {
+        color: #ffffff;
+        font-size: 13px;
+        text-align: left;
+        margin: 8px 0;
+        letter-spacing: 0.5px;
+    }
+
+    .mhm-chart-image {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 8px 0;
+        background: #0a0e14;
+        min-height: 160px;
+        display: block;
+    }
+
+    .mhm-signal-details {
+        margin: 8px 0;
+        line-height: 1.8;
+    }
+
+    .mhm-detail-line {
+        color: #e8e8e8;
+        font-size: 14px;
+        margin: 4px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .mhm-emoji {
+        font-size: 15px;
+        display: inline-block;
+    }
+
+    .mhm-sell-type, .mhm-buy-type {
+        color: #e8e8e8;
+        font-weight: 600;
+    }
+
+    .mhm-rsi-indicator {
+        background: transparent;
+        border: none;
+        padding: 8px 0;
+        margin: 8px 0;
+        color: #e8e8e8;
+        font-size: 13px;
+    }
+
+    .mhm-message-input-container {
+        background: #17212b;
+        padding: 8px 12px;
+        border-top: 1px solid #0e1621;
+    }
+
+    .mhm-message-input-wrapper {
+        background-image: url('mhm/we.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        gap: 8px;
+        height: 48px;
+        position: relative;
+    }
+    /* ===== نهاية الأنماط المنسوخة ===== */
+
+    /* تعديل مخصص: إزالة تأثير الحركة عند التمرير فوق واجهة البوت */
+    .hunter-bot-image:hover {
+        transform: none !important;
+    }
+
+    /* تعديل إضافي: ضمان عدم تأثر قسم البوت بأي حركات نبض */
+    .hunter-bot-section, .hunter-bot-section * {
+        animation-name: none !important;
+    }
+
+  </style>
+</head>
+<body class="dark-mode">
+  <!-- زر العودة للأعلى -->
+  <div class="scroll-to-top">
+    <i class="fas fa-chevron-up"></i>
+  </div>
+
+  <!-- إضافة خلفية شفافة للقائمة المتنقلة -->
+  <div class="mobile-menu-overlay"></div>
+
+  <!-- هيدر باللغة العربية -->
+  <header id="header-ar" class="header">
+    <div class="container">
+      <div class="mobile-menu-btn">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="logo">
+        <img src="1.png" alt="Hunter Logo" class="dark-logo" style="height: 50px;">
+        <img src="1w.png" alt="Hunter Logo" class="light-logo" style="height: 50px; display: none;">
+      </div>
+      <nav class="main-nav">
+        <div class="close-menu">
+          <i class="fas fa-times"></i>
+        </div>
+        <ul>
+          <li><a href="#home" class="active">الرئيسية</a></li>
+          <li><a href="#courses">الإستراتيجية</a></li>
+          <li><a href="#features">المميزات</a></li>
+          <li><a href="#faq">الأسئلة الشائعة</a></li>
+        </ul>
+        <div class="mobile-language-switcher">
+          <h4>اختر اللغة</h4>
+          <div class="language-links">
+            <a href="#" id="ar-link-mobile" class="active">عربي</a>
+            <a href="#" id="en-link-mobile">English</a>
+          </div>
+        </div>
+        <div class="mobile-mode-toggle">
+          <h4>الوضع</h4>
+          <div class="toggle-switch">
+            <i class="fas fa-moon"></i>
+            <span>الوضع الداكن</span>
+          </div>
+        </div>
+      </nav>
+      <div class="language-switcher">
+        <a href="#" id="ar-link" class="active">عربي</a>
+      </div>
+      <div class="mode-toggle">
+        <i class="fas fa-moon"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- هيدر باللغة الإنجليزية -->
+  <header id="header-en" class="header" style="display: none;">
+    <div class="container">
+      <div class="mobile-menu-btn" style="float: right;">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="logo">
+        <img src="1.png" alt="Hunter Logo" class="dark-logo" style="height: 50px;">
+        <img src="1w.png" alt="Hunter Logo" class="light-logo" style="height: 50px; display: none;">
+      </div>
+      <nav class="main-nav">
+        <div class="close-menu">
+          <i class="fas fa-times"></i>
+        </div>
+        <ul>
+          <li><a href="#home" class="active">Home</a></li>
+          <li><a href="#courses">Strategy</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+        <!-- إضافة مبدل اللغة للجوال -->
+        <div class="mobile-language-switcher">
+          <h4>Select Language</h4>
+          <div class="language-links">
+            <a href="#" id="ar-link-mobile-en">عربي</a>
+            <a href="#" id="en-link-mobile-en" class="active">English</a>
+          </div>
+        </div>
+        <!-- إضافة زر الوضع الداكن/الفاتح للجوال -->
+        <div class="mobile-mode-toggle">
+          <h4>Theme</h4>
+          <div class="toggle-switch">
+            <i class="fas fa-moon"></i>
+            <span>Dark Mode</span>
+          </div>
+        </div>
+      </nav>
+      <div class="language-switcher">
+        <a href="#" id="ar-link-en">عربي</a>
+      </div>
+      <div class="mode-toggle">
+        <i class="fas fa-moon"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- المحتوى باللغة العربية -->
+  <div id="content-ar">
+    <section class="hero" id="home">
+      <div id="map-background-ar" class="map-background"></div>
+      <div class="container">
+        <div class="hero-content">
+          <h1>اهلا بكم في Hunter</h1>
+          <h2>نظام تداول احترافي Hunter </h2>
+          <a href="#courses" class="btn btn-primary">اشتري النظام الآن</a>
+        </div>
+      </div>
+    </section>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        .full-screen-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* يضمن أن الصورة تملأ الشاشة دون أن يتم تشويهها */
+        }
+    </style>
+
+    <!-- شريط TradingView للوضع الفاتح -->
+    <div class="tradingview-widget-container light-mode-widget" style="display: none;">
+      <div id="tradingview_ticker_light_ar"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          { "proName": "FOREXCOM:XAUUSD", "title": "Gold (XAU/USD)" },
+          { "proName": "FOREXCOM:EURUSD", "title": "EUR/USD" },
+          { "proName": "FOREXCOM:GBPUSD", "title": "GBP/USD" },
+          { "proName": "FOREXCOM:USDJPY", "title": "USD/JPY" },
+          { "proName": "FOREXCOM:USDCHF", "title": "USD/CHF" },
+          { "proName": "FOREXCOM:AUDUSD", "title": "AUD/USD" },
+          { "proName": "FOREXCOM:USDCAD", "title": "USD/CAD" },
+          { "proName": "FOREXCOM:NZDUSD", "title": "NZD/USD" },
+          { "proName": "FOREXCOM:EURJPY", "title": "EUR/JPY" },
+          { "proName": "FOREXCOM:GBPJPY", "title": "GBP/JPY" },
+          { "proName": "FOREXCOM:EURGBP", "title": "EUR/GBP" },
+          { "proName": "FOREXCOM:CHFJPY", "title": "CHF/JPY" },
+          { "proName": "FOREXCOM:EURCHF", "title": "EUR/CHF" },
+          { "proName": "FOREXCOM:EURAUD", "title": "EUR/AUD" },
+          { "proName": "FOREXCOM:GBPAUD", "title": "GBP/AUD" },
+          { "proName": "FOREXCOM:AUDJPY", "title": "AUD/JPY" },
+          { "proName": "FOREXCOM:GBPCAD", "title": "GBP/CAD" },
+          { "proName": "FOREXCOM:EURCAD", "title": "EUR/CAD" },
+          { "proName": "FOREXCOM:NZDJPY", "title": "NZD/JPY" },
+          { "proName": "FOREXCOM:AUDNZD", "title": "AUD/NZD" },
+          { "proName": "FOREXCOM:CADJPY", "title": "CAD/JPY" },
+          { "proName": "FOREXCOM:GBPNZD", "title": "GBP/NZD" }
+        ],
+        "showSymbolLogo": true,
+        "colorTheme": "light",
+        "isTransparent": false,
+        "displayMode": "regular",
+        "locale": "ar_SA"
+      }
+      </script>
+    </div>
+
+    <!-- شريط TradingView للوضع الداكن -->
+    <div class="tradingview-widget-container dark-mode-widget">
+      <div id="tradingview_ticker_dark_ar"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          { "proName": "FOREXCOM:XAUUSD", "title": "Gold (XAU/USD)" },
+          { "proName": "FOREXCOM:EURUSD", "title": "EUR/USD" },
+          { "proName": "FOREXCOM:GBPUSD", "title": "GBP/USD" },
+          { "proName": "FOREXCOM:USDJPY", "title": "USD/JPY" },
+          { "proName": "FOREXCOM:USDCHF", "title": "USD/CHF" },
+          { "proName": "FOREXCOM:AUDUSD", "title": "AUD/USD" },
+          { "proName": "FOREXCOM:USDCAD", "title": "USD/CAD" },
+          { "proName": "FOREXCOM:NZDUSD", "title": "NZD/USD" },
+          { "proName": "FOREXCOM:EURJPY", "title": "EUR/JPY" },
+          { "proName": "FOREXCOM:GBPJPY", "title": "GBP/JPY" },
+          { "proName": "FOREXCOM:EURGBP", "title": "EUR/GBP" },
+          { "proName": "FOREXCOM:CHFJPY", "title": "CHF/JPY" },
+          { "proName": "FOREXCOM:EURCHF", "title": "EUR/CHF" },
+          { "proName": "FOREXCOM:EURAUD", "title": "EUR/AUD" },
+          { "proName": "FOREXCOM:GBPAUD", "title": "GBP/AUD" },
+          { "proName": "FOREXCOM:AUDJPY", "title": "AUD/JPY" },
+          { "proName": "FOREXCOM:GBPCAD", "title": "GBP/CAD" },
+          { "proName": "FOREXCOM:EURCAD", "title": "EUR/CAD" },
+          { "proName": "FOREXCOM:NZDJPY", "title": "NZD/JPY" },
+          { "proName": "FOREXCOM:AUDNZD", "title": "AUD/NZD" },
+          { "proName": "FOREXCOM:CADJPY", "title": "CAD/JPY" },
+          { "proName": "FOREXCOM:GBPNZD", "title": "GBP/NZD" }
+        ],
+        "showSymbolLogo": true,
+        "colorTheme": "dark",
+        "isTransparent": false,
+        "displayMode": "regular",
+        "locale": "ar_SA"
+      }
+      </script>
+    </div>
+
+<!-- قسم الفوركس — العربية -->
+<section class="forex" id="forex">
+  <div class="container">
+    <div class="section-header">
+      <h2>تداول الفوركس مع Hunter</h2>
+      <p>الفوركس هو سوق تداول العملات الأجنبية، وهو أكبر سوق مالي في العالم. مع استراتيجية Hunter، ستتعلم كيفية التداول في سوق الفوركس باحترافية، وفهم تحركات السوق، واتخاذ القرارات الصحيحة لتحقيق الأرباح.</p>
+    </div>
+    <div class="forex-features">
+      <div class="forex-feature">
+        <div class="forex-feature-icon"><i class="fas fa-globe"></i></div>
+        <h3>تداول عالمي</h3>
+        <p>تعلم التداول على العملات الأجنبية والمعادن والمؤشرات.</p>
+      </div>
+      <div class="forex-feature">
+        <div class="forex-feature-icon"><i class="fas fa-chart-line"></i></div>
+        <h3>تحليل السوق</h3>
+        <p>تعلم كيفية تحليل السوق واتخاذ القرارات بناءً على البيانات.</p>
+      </div>
+      <div class="forex-feature">
+        <div class="forex-feature-icon"><i class="fas fa-shield-alt"></i></div>
+        <h3>إدارة المخاطر</h3>
+        <p>تعلم استراتيجيات إدارة المخاطر لحماية حسابك.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+    <!-- ===== قسم بوت هنتر للفوركس - العربية ===== -->
+    <section id="hunter-fx-bot-ar" class="hunter-bot-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Hunter FX Bot</h2>
+                <p>بوت فوركس متقدم يرسل لك توصيات جاهزة لأزواج العملات، مع تحديد دقيق لنقاط الدخول، الهدف (Take Profit)، ووقف الخسارة (Stop Loss).</p>
+            </div>
+            <div class="hunter-bot-content">
+                <div class="hunter-bot-image">
+                    <!-- واجهة المحادثة الجديدة المنسوخة من mhm/index.html -->
+                    <div class="mhm-telegram-container" dir="ltr">
+                        <!-- Header -->
+                        <div class="mhm-chat-header">
+                            <img src="mhm/al.png" alt="Header" class="mhm-header-image" 
+                                 onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'mhm-header-default\'><div class=\'mhm-bot-avatar\'><img src=\'1.png\' alt=\'Bot Logo\' onerror=\'this.parentElement.innerHTML=&quot;FX&quot;\'></div><div class=\'mhm-bot-info\'><div class=\'mhm-bot-name\'>Hunter FX Swing</div><div class=\'mhm-bot-status\'>bot</div></div></div>'">
+                        </div>
+                
+                        <!-- Messages -->
+                        <div class="mhm-chat-messages">
+                            <!-- Message 1 - EURJPY -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/EURJPY.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 12:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: EURJPY</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-sell-type">SELL 🔴</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 179.74300</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 179.98400</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 179.50200</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 179.26100</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (51.8) | Last Overbought (SELL) before 25 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">12:00 PM</span>
+                            </div>
+
+                            <!-- Message 2 - AUDUSD -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/AUDUSD.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 12:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: AUDUSD</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-buy-type">BUY 🟢</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 0.65297</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 0.65178</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 0.65416</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 0.65535</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (42.0) | Last Overbought (SELL) before 25 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">12:00 PM</span>
+                            </div>
+
+                            <!-- Message 3 - EURTRY -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/EURTRY.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 11:01</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: EURTRY</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-sell-type">SELL 🔴</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 49.28002</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 49.33750</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 49.22254</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 49.16506</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (71.1) | Last Overbought (SELL) before 0 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">11:01 AM</span>
+                            </div>
+
+                            <!-- Message 4 - USDNOK -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/USDNOK.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 07:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: USDNOK</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-buy-type">BUY 🟢</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 10.00326</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 9.99031</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 10.01621</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 10.02916</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (35.2) | Last Oversold  (BUY) before 11 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">07:00 AM</span>
+                            </div>
+
+                            <!-- Message 5 - USDCAD -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/USDCAD.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 04:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: USDCAD</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-sell-type">SELL 🔴</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 1.40342</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 1.40447</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 1.40237</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 1.40132</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (65.0) | Last Overbought (SELL) before 7 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">04:00 AM</span>
+                            </div>
+
+                            <!-- Message 6 - GBPNZD -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/GBPNZD.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 02:02</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: GBPNZD</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-sell-type">SELL 🔴</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 2.32869</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 2.33595</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 2.32143</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 2.31417</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (56.0) | Last Overbought (SELL) before 5 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">02:02 AM</span>
+                            </div>
+
+                            <!-- Message 7 - GBPCHF -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/GBPCHF.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 23:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: GBPCHF</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-buy-type">BUY 🟢</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 1.04560</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 1.04454</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 1.04666</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 1.04772</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (37.5) | Last Oversold  (BUY) before 27 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">11:00 PM</span>
+                            </div>
+
+                            <!-- Message 8 - AUDCAD -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/AUDCAD.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 22:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: AUDCAD</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-sell-type">SELL 🔴</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 0.91626</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 0.92054</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 0.91198</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 0.90770</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (41.5) | Last Overbought (SELL) before 11 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">10:00 PM</span>
+                            </div>
+                        </div>
+                
+                        <!-- Input Area -->
+                        <div class="mhm-message-input-container">
+                            <div class="mhm-message-input-wrapper">
+                                <!-- المحتوى فارغ كما في الملف المصدر -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hunter-bot-features">
+                    <h3>لماذا تختار بوت هنتر؟</h3>
+                    <ul>
+                        <li><i class="fas fa-paper-plane"></i> <span>توصيات فورية وجاهزة على التيليجرام.</span></li>
+                        <li><i class="fas fa-eye"></i> <span>واجهة حية لعرض أحدث الإشارات.</span></li>
+                        <li><i class="fas fa-crosshairs"></i> <span>تحديد دقيق للهدف ووقف الخسارة لكل صفقة.</span></li>
+                        <li><i class="fas fa-coins"></i> <span>يدعم أشهر أزواج العملات في سوق الفوركس.</span></li>
+                        <li><i class="fas fa-brain"></i> <span>مبني على استراتيجيات تداول ذكية ومُختبرة.</span></li>
+                    </ul>
+                    <a href="https://t.me/HunterFXSwing_bot" target="_blank" class="btn btn-primary">جرّب البوت مجاناً</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="features" id="features">
+      <div class="container">
+        <div class="section-header">
+          <h2>مميزات النظام</h2>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>مؤشر تداول ذكي</h3>
+            <p>تداول باحتراف مع مؤشر Hunter على منصة TradingView</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-video"></i>
+            </div>
+            <h3>فيديوهات شرح</h3>
+            <p>شرح عملي لاستخدام المؤشر</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-robot"></i>
+            </div>
+            <h3>بوت توصيات</h3>
+            <p>يرسل لك صفقات على تليجرام</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="courses" id="courses">
+      <div class="container">
+        <div class="section-header indicator-header" style="margin-bottom: 30px;">
+          <h2>مؤشر Hunter</h2>
+          <p class="indicator-description">هو عبارة عن مؤشر مبني على سلوك الشمعة، يعطيك دخولات دقيقة على الفوركس والكريبتو.</p>
+          <div class="timeframes-container">
+            <span>الفريمات المدعومة:</span>
+            <div class="timeframes">
+              <div class="timeframe-tag">5m</div>
+              <div class="timeframe-tag">1h</div>
+              <div class="timeframe-tag">4h</div>
+              <div class="timeframe-tag">1d</div>
+            </div>
+          </div>
+        </div>
+        <div class="forex-images" style="margin-bottom: 50px;">
+          <div class="image-box">
+            <img src="2.png" alt="صورة للمؤشر 1" class="dark-mode-img">
+            <img src="2w.png" alt="صورة للمؤشر 1" class="light-mode-img" style="display: none;">
+          </div>
+          <div class="image-box">
+            <img src="3.png" alt="صورة للمؤشر 2" class="dark-mode-img">
+            <img src="3w.png" alt="صورة للمؤشر 2" class="light-mode-img" style="display: none;">
+          </div>
+          <div class="image-box">
+            <img src="4b.png" alt="صورة للمؤشر 3" class="dark-mode-img">
+            <img src="4w.png" alt="صورة للمؤشر 3" class="light-mode-img" style="display: none;">
+          </div>
+          <div class="image-box">
+            <img src="9.png" alt="صورة للمؤشر 4" class="dark-mode-img">
+            <img src="9w.png" alt="صورة للمؤشر 4" class="light-mode-img" style="display: none;">
+          </div>
+        </div>
+<section class="indicator-benefits">
+  <div class="container">
+    <!-- الصورة -->
+    <div class="benefit-image">
+      <img src="5.png" alt="NEXT CANDEL Indicator">
+    </div>
+
+    <!-- المميزات -->
+    <div class="benefit-content">
+      <div class="section-header" style="margin-bottom: 20px;">
+        <h2>لماذا تختار نظام Hunter؟</h2>
+      </div>
+      <p>نظام هنتر هو عبارة عن بوت تليجرام احترافي + مؤشر تريدنج فيو يوفر صفقات سكالبينج وسوينج ويكون مبني على حركة الشموع المميزة.</p>
+      
+      <div class="feature-strips">
+        <div class="strip-item">
+          <i class="fas fa-bolt pulse-icon"></i>
+          <span>يوفر صفقات سكالبينج وسوينج</span>
+        </div>
+        <div class="strip-item">
+          <i class="fas fa-sync-alt pulse-icon"></i>
+          <span>مناسب لتداول الفوركس والكريبتو</span>
+        </div>
+        <div class="strip-item">
+          <i class="fas fa-bullseye pulse-icon"></i>
+          <span>إشارات فورية بدون إعادة رسم</span>
+        </div>
+        <div class="strip-item">
+          <i class="fas fa-layer-group pulse-icon"></i>
+          <span>يعمل على جميع الفريمات والأصول</span>
+        </div>
+        <div class="strip-item">
+          <i class="fas fa-user-shield pulse-icon"></i>
+          <span>سهل الاستخدام ولا يحتاج خبرة مسبقة</span>
+        </div>
+        <div class="strip-item">
+          <i class="fas fa-headset pulse-icon"></i>
+          <span>دعم فني مباشر + دليل شامل</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="section-header">
+  <h2>نظام Hunter الحصري</h2>
+  <p>اختر الباقة التي تناسبك</p>
+</div>
+</div>
+
+<div class="courses-grid">
+  <!-- البطاقة الأولى: العرض الحصري -->
+  <div class="course-card featured" id="telegram-bot-card">
+    <div class="course-badge">تجربة مجانية</div>
+    <div class="course-header">
+      <h3>Hunter Telegram Bot</h3>
+    </div>
+    <div class="course-price">
+      <h4>بوت تليجرام للفوركس</h4>
+    </div>
+    <div class="course-details">
+      <ul>
+        <li><i class="fas fa-check"></i> إرسال إشارات على أزواج الفوركس والمؤشرات الامريكية</li>
+        <li><i class="fas fa-check"></i> يوفر نقطة دخول وهدف وستوب</li>
+        <li><i class="fas fa-check"></i> صفقات ذات نسبة نجاح عالية</li>
+        <li><i class="fas fa-check"></i> صفقات سوينج وسكالبينج</li>
+      </ul>
+    </div>
+    <div class="course-actions">
+      <a href="https://t.me/HunterFXSwing_bot" class="btn btn-primary" target="_blank">تجربة</a>
+    </div>
+  </div>
+
+  <!-- البطاقة الثانية: مدى الحياة -->
+  <div class="course-card featured" id="crypto-bot-card">
+    <div class="course-badge" style="background: linear-gradient(45deg, #ff9800, #f57c00); color: white;">قريباً</div>
+    <div class="course-header">
+      <h3>Hunter Crypto Bot</h3>
+    </div>
+    <div class="course-price">
+      <h4>بوت تليجرام للكربتو</h4>
+    </div>
+    <div class="course-details">
+      <ul>
+        <li><i class="fas fa-check"></i> يدعم أكثر من 600 عملة رقمية</li>
+        <li><i class="fas fa-check"></i> يوفر صفقات مع هدف وستوب</li>
+        <li><i class="fas fa-check"></i> يتم تحديث العملات الرقمية باستمرار</li>
+      </ul>
+    </div>
+    <div class="course-actions">
+      <a href="#" class="btn btn-primary disabled" target="_blank">قريباً</a>
+    </div>
+  </div>
+
+  <!-- البطاقة الثالثة: المؤشر -->
+  <div class="course-card featured" id="indicator-card">
+    <div class="course-badge" style="background: linear-gradient(45deg, #ff9800, #f57c00); color: white;">قريباً</div>
+    <div class="course-header">
+      <h3>Hunter Indicator</h3>
+    </div>
+    <div class="course-price">
+      <h4>مؤشر على منصة تريدنج فيو</h4>
+    </div>
+    <div class="course-details">
+      <ul>
+        <li><i class="fas fa-check"></i> يدعم الفوركس والكريبتو</li>
+        <li><i class="fas fa-check"></i> يوفر دخولات سكالبينج وسوينج</li>
+        <li><i class="fas fa-check"></i> يوفر هدف وستوب</li>
+      </ul>
+    </div>
+    <div class="course-actions">
+      <a href="#" class="btn btn-primary disabled" target="_blank">قريباً</a>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+    <!-- قسم الأسئلة الشائعة بالعربية -->
+    <section class="faq-section" id="faq">
+      <div class="container">
+        <div class="section-header">
+          <h2>الأسئلة الشائعة</h2>
+        </div>
+        <div class="faq-items">
+            <details>
+                <summary>ما هو نظام hunter</summary>
+                <p>هو عبارة عن مؤشر تداول + بوت تليجرام احترافي مصمم لإعطاء إشارات تداول دقيقة.</p>
+            </details>
+            <details>
+                <summary>هل هناك فرق بين المؤشر وبوت التليجرام</summary>
+                <p>المؤشر وبوت التليجرام كلاهما يعطيك نفس الإشارات بالضبط.</p>
+            </details>
+            <details>
+                <summary>على اي استراتيجية مبني النظام</summary>
+                <p>مبني على تحليل سلوك الشمعة مع ربط بالفريمات.</p>
+            </details>
+            <details>
+                <summary>هل يعمل النظام على جميع الفريمات والاصول ؟</summary>
+                <p>نعم يعمل على الفوركس والكريبتو ويعمل على عدة فريمات.</p>
+            </details>
+            <details>
+                <summary>كيف أستلم النظام بعد الشراء؟</summary>
+                <p>ستستلم بوت الفوركس وبوت الكريبتو ومؤشر تريدنج فيو.</p>
+            </details>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <h3>Hunter</h3>
+                <p>تداول بذكاء مع نظام Hunter</p>
+            </div>
+            <div class="footer-links">
+                <h4>روابط سريعة</h4>
+                <ul>
+                    <li><a href="#home">الرئيسية</a></li>
+                    <li><a href="#courses">الشراء</a></li>
+                    <li><a href="#features">المميزات</a></li>
+                    <li><a href="#faq">الأسئلة الشائعة</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; مبرمج من قبل ايهم انور  الكرخ المهنيه</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- المحتوى باللغة الإنجليزية -->
+  <div id="content-en" style="display: none;">
+    <section class="hero" id="home">
+      <div id="map-background-en" class="map-background"></div>
+      <div class="container">
+        <div class="hero-content">
+          <h1>Welcome to Hunter</h1>
+          <h2>Professional Trading Indicator Hunter</h2>
+          <a href="#courses" class="btn btn-primary">Buy Indicator Now</a>
+        </div>
+      </div>
+    </section>
+    <!-- شريط TradingView للوضع الفاتح -->
+    <div class="tradingview-widget-container light-mode-widget" style="display: none;">
+      <div id="tradingview_ticker_light_en"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          { "proName": "FOREXCOM:XAUUSD", "title": "Gold (XAU/USD)" },
+          { "proName": "FOREXCOM:EURUSD", "title": "EUR/USD" },
+          { "proName": "FOREXCOM:GBPUSD", "title": "GBP/USD" },
+          { "proName": "FOREXCOM:USDJPY", "title": "USD/JPY" },
+          { "proName": "FOREXCOM:USDCHF", "title": "USD/CHF" },
+          { "proName": "FOREXCOM:AUDUSD", "title": "AUD/USD" },
+          { "proName": "FOREXCOM:USDCAD", "title": "USD/CAD" },
+          { "proName": "FOREXCOM:NZDUSD", "title": "NZD/USD" },
+          { "proName": "FOREXCOM:EURJPY", "title": "EUR/JPY" },
+          { "proName": "FOREXCOM:GBPJPY", "title": "GBP/JPY" },
+          { "proName": "FOREXCOM:EURGBP", "title": "EUR/GBP" },
+          { "proName": "FOREXCOM:CHFJPY", "title": "CHF/JPY" },
+          { "proName": "FOREXCOM:EURCHF", "title": "EUR/CHF" },
+          { "proName": "FOREXCOM:EURAUD", "title": "EUR/AUD" },
+          { "proName": "FOREXCOM:GBPAUD", "title": "GBP/AUD" },
+          { "proName": "FOREXCOM:AUDJPY", "title": "AUD/JPY" },
+          { "proName": "FOREXCOM:GBPCAD", "title": "GBP/CAD" },
+          { "proName": "FOREXCOM:EURCAD", "title": "EUR/CAD" },
+          { "proName": "FOREXCOM:NZDJPY", "title": "NZD/JPY" },
+          { "proName": "FOREXCOM:AUDNZD", "title": "AUD/NZD" },
+          { "proName": "FOREXCOM:CADJPY", "title": "CAD/JPY" },
+          { "proName": "FOREXCOM:GBPNZD", "title": "GBP/NZD" }
+        ],
+        "showSymbolLogo": true,
+        "colorTheme": "light",
+        "isTransparent": false,
+        "displayMode": "regular",
+        "locale": "en"
+      }
+      </script>
+    </div>
+
+    <!-- شريط TradingView للوضع الداكن -->
+    <div class="tradingview-widget-container dark-mode-widget">
+      <div id="tradingview_ticker_dark_en"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          { "proName": "FOREXCOM:XAUUSD", "title": "Gold (XAU/USD)" },
+          { "proName": "FOREXCOM:EURUSD", "title": "EUR/USD" },
+          { "proName": "FOREXCOM:GBPUSD", "title": "GBP/USD" },
+          { "proName": "FOREXCOM:USDJPY", "title": "USD/JPY" },
+          { "proName": "FOREXCOM:USDCHF", "title": "USD/CHF" },
+          { "proName": "FOREXCOM:AUDUSD", "title": "AUD/USD" },
+          { "proName": "FOREXCOM:USDCAD", "title": "USD/CAD" },
+          { "proName": "FOREXCOM:NZDUSD", "title": "NZD/USD" },
+          { "proName": "FOREXCOM:EURJPY", "title": "EUR/JPY" },
+          { "proName": "FOREXCOM:GBPJPY", "title": "GBP/JPY" },
+          { "proName": "FOREXCOM:EURGBP", "title": "EUR/GBP" },
+          { "proName": "FOREXCOM:CHFJPY", "title": "CHF/JPY" },
+          { "proName": "FOREXCOM:EURCHF", "title": "EUR/CHF" },
+          { "proName": "FOREXCOM:EURAUD", "title": "EUR/AUD" },
+          { "proName": "FOREXCOM:GBPAUD", "title": "GBP/AUD" },
+          { "proName": "FOREXCOM:AUDJPY", "title": "AUD/JPY" },
+          { "proName": "FOREXCOM:GBPCAD", "title": "GBP/CAD" },
+          { "proName": "FOREXCOM:EURCAD", "title": "EUR/CAD" },
+          { "proName": "FOREXCOM:NZDJPY", "title": "NZD/JPY" },
+          { "proName": "FOREXCOM:AUDNZD", "title": "AUD/NZD" },
+          { "proName": "FOREXCOM:CADJPY", "title": "CAD/JPY" },
+          { "proName": "FOREXCOM:GBPNZD", "title": "GBP/NZD" }
+        ],
+        "showSymbolLogo": true,
+        "colorTheme": "dark",
+        "isTransparent": false,
+        "displayMode": "regular",
+        "locale": "en"
+      }
+      </script>
+    </div>
+
+<!-- Forex section — English -->
+<section class="forex" id="forex">
+  <div class="container">
+    <div class="section-header">
+      <h2>Forex Trading with Hunter</h2>
+      <p>Forex is the foreign exchange market, the largest financial market in the world. With the Hunter strategy, you'll learn how to trade forex professionally, understand market movements, and make the right decisions to generate profits.</p>
+    </div>
+    <div class="forex-features">
+      <div class="forex-feature">
+        <div class="forex-feature-icon"><i class="fas fa-globe"></i></div>
+        <h3>Global Trading</h3>
+        <p>Learn to trade currencies, metals, and indices.</p>
+      </div>
+      <div class="forex-feature">
+        <div class="forex-feature-icon"><i class="fas fa-chart-line"></i></div>
+        <h3>Market Analysis</h3>
+        <p>Learn how to analyze the market and make data-driven decisions.</p>
+      </div>
+      <div class="forex-feature">
+        <div class="forex-feature-icon"><i class="fas fa-shield-alt"></i></div>
+        <h3>Risk Management</h3>
+        <p>Learn risk-management strategies to protect your account.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+    <!-- ===== Hunter Forex Bot Section - English ===== -->
+    <section id="hunter-fx-bot-en" class="hunter-bot-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Hunter FX Bot</h2>
+                <p>An advanced Forex bot that sends you ready-to-use signals for currency pairs, with precise entry points, Take Profit, and Stop Loss.</p>
+            </div>
+            <div class="hunter-bot-content">
+                <div class="hunter-bot-image">
+                    <!-- New Chat Interface copied from mhm/index.html -->
+                    <div class="mhm-telegram-container" dir="ltr">
+                        <!-- Header -->
+                        <div class="mhm-chat-header">
+                            <img src="mhm/al.png" alt="Header" class="mhm-header-image" 
+                                 onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'mhm-header-default\'><div class=\'mhm-bot-avatar\'><img src=\'1.png\' alt=\'Bot Logo\' onerror=\'this.parentElement.innerHTML=&quot;FX&quot;\'></div><div class=\'mhm-bot-info\'><div class=\'mhm-bot-name\'>Hunter FX Swing</div><div class=\'mhm-bot-status\'>bot</div></div></div>'">
+                        </div>
+                
+                        <!-- Messages -->
+                        <div class="mhm-chat-messages">
+                            <!-- Message 1 - EURJPY -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/EURJPY.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 12:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: EURJPY</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-sell-type">SELL 🔴</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 179.74300</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 179.98400</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 179.50200</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 179.26100</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (51.8) | Last Overbought (SELL) before 25 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">12:00 PM</span>
+                            </div>
+
+                            <!-- Message 2 - AUDUSD -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/AUDUSD.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 12:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: AUDUSD</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-buy-type">BUY 🟢</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 0.65297</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 0.65178</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 0.65416</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 0.65535</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (42.0) | Last Overbought (SELL) before 25 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">12:00 PM</span>
+                            </div>
+
+                            <!-- Message 3 - EURTRY -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/EURTRY.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 11:01</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: EURTRY</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-sell-type">SELL 🔴</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 49.28002</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 49.33750</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 49.22254</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 49.16506</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (71.1) | Last Overbought (SELL) before 0 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">11:01 AM</span>
+                            </div>
+
+                            <!-- Message 4 - USDNOK -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/USDNOK.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 07:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: USDNOK</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-buy-type">BUY 🟢</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 10.00326</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 9.99031</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 10.01621</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 10.02916</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (35.2) | Last Oversold  (BUY) before 11 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">07:00 AM</span>
+                            </div>
+
+                            <!-- Message 5 - USDCAD -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/USDCAD.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 04:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: USDCAD</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-sell-type">SELL 🔴</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 1.40342</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 1.40447</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 1.40237</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 1.40132</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (65.0) | Last Overbought (SELL) before 7 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">04:00 AM</span>
+                            </div>
+
+                            <!-- Message 6 - GBPNZD -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/GBPNZD.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 02:02</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: GBPNZD</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-sell-type">SELL 🔴</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 2.32869</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 2.33595</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 2.32143</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 2.31417</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (56.0) | Last Overbought (SELL) before 5 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">02:02 AM</span>
+                            </div>
+
+                            <!-- Message 7 - GBPCHF -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/GBPCHF.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 23:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: GBPCHF</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-buy-type">BUY 🟢</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 1.04560</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 1.04454</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 1.04666</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 1.04772</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (37.5) | Last Oversold  (BUY) before 27 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">11:00 PM</span>
+                            </div>
+
+                            <!-- Message 8 - AUDCAD -->
+                            <div class="mhm-message-bubble">
+                                <div class="mhm-signal-content" dir="ltr">
+                                    <img src="mhm/AUDCAD.png" alt="Chart" class="mhm-chart-image" onerror="this.style.background='linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%)'">
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                    <div class="mhm-signal-details">
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">⏰</span><span>Time: 22:00</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📊</span><span>Pair: AUDCAD</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✨</span><span>Style: Swing 1H</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">📈</span><span>Type: <span class="mhm-sell-type">SELL 🔴</span></span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🎯</span><span>Entry: 0.91626</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">🛑</span><span>Stop Loss: 0.92054</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 1: 0.91198</span></div>
+                                        <div class="mhm-detail-line"><span class="mhm-emoji">✅</span><span>Target 2: 0.90770</span></div>
+                                    </div>
+                                    <div class="mhm-rsi-indicator">
+                                        📊 RSI (41.5) | Last Overbought (SELL) before 11 candle
+                                    </div>
+                                    <div class="mhm-trophy-line">🏆 ════════════════ 🏆</div>
+                                </div>
+                                <span class="mhm-message-time">10:00 PM</span>
+                            </div>
+                        </div>
+                
+                        <!-- Input Area -->
+                        <div class="mhm-message-input-container">
+                            <div class="mhm-message-input-wrapper">
+                                <!-- Content is empty as in source file -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hunter-bot-features">
+                    <h3>Why Choose Hunter Bot?</h3>
+                    <ul>
+                        <li><i class="fas fa-paper-plane"></i> <span>Instant and ready signals on Telegram.</span></li>
+                        <li><i class="fas fa-eye"></i> <span>Live interface to display the latest signals.</span></li>
+                        <li><i class="fas fa-crosshairs"></i> <span>Precise Take Profit and Stop Loss for each trade.</span></li>
+                        <li><i class="fas fa-coins"></i> <span>Supports the most popular currency pairs in the Forex market.</span></li>
+                        <li><i class="fas fa-brain"></i> <span>Built on smart and tested trading strategies.</span></li>
+                    </ul>
+                    <a href="https://t.me/HunterFXSwing_bot" target="_blank" class="btn btn-primary">Try the Bot for Free</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+      <div class="container">
+        <div class="section-header">
+          <h2>Indicator Features</h2>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>Smart Trading system</h3>
+            <p>Trade professionally with the Hunter system on the TradingView platform</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-video"></i>
+            </div>
+            <h3>Tutorial Videos</h3>
+            <p>Practical explanation for using indicators</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-headset"></i>
+            </div>
+            <h3>Recommendations Bot</h3>
+            <p>Sends you deals on Telegram</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="courses" id="courses">
+           <div class="container">
+        <div class="section-header">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        .full-screen-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* يضمن أن الصورة تملأ الشاشة دون أن يتم تشويهها */
+        }
+    </style>
+    <img src="2.png" alt="Image" class="full-screen-image dark-mode-img">
+    <img src="3.png" alt="Image" class="full-screen-image dark-mode-img">
+    <img src="4b.png" alt="Image" class="full-screen-image dark-mode-img">
+    <img src="2w.png" alt="Image" class="full-screen-image light-mode-img" style="display: none;">
+    <img src="3w.png" alt="Image" class="full-screen-image light-mode-img" style="display: none;">
+    <img src="4w.png" alt="Image" class="full-screen-image light-mode-img" style="display: none;">
+<section class="indicator-benefits">
+  <div class="container">
+    <div class="benefit-image">
+      <img src="5.png" alt="NEXT CANDEL Indicator">
+    </div>
+ 
+    <div class="benefit-content">
+      <h2 class="glow-title">Why choose the Hunter system?</h2>
+      <p>The Hunter system is a professional Telegram bot + TradingView indicator that provides scalping and swing trades based on distinctive candle movements.</p>
+
+      <div class="feature-strips">
+        <div class="strip-item">
+          <i class="fas fa-bolt pulse-icon"></i>
+          <span>Predict the next candle color with high accuracy</span>
+        </div>
+        <div class="strip-item">
+          <i class="fas fa-sync-alt pulse-icon"></i> 
+          <span>Suitable for Forex trading </span>
+        </div>
+        <div class="strip-item">
+          <i class="fas fa-bullseye pulse-icon"></i>
+          <span>Instant signals with no repaint</span>
+        </div>
+        <div class="strip-item">
+          <i class="fas fa-layer-group pulse-icon"></i>
+          <span>Works on all timeframes and assets</span>
+        </div>
+        <div class="strip-item">
+          <i class="fas fa-user-shield pulse-icon"></i>
+          <span>No experience required</span>
+        </div>
+        <div class="strip-item">
+          <i class="fas fa-headset pulse-icon"></i>
+          <span>Direct support & full usage guide</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<h2>Exclusive Hunter System</h2>
+<p>Get the full system now with 30% off</p>
+</div>
+
+<div class="courses-grid">
+  <!-- Card 1: Exclusive Offer -->
+  <div class="course-card featured">
+    <div class="course-badge">Exclusive Offer</div>
+    <div class="course-header">
+      <h3>Hunter System</h3>
+    </div>
+    <div class="course-price">
+      <h4>Price: <span id="displayPrice">$100</span> instead of <del>$130</del></h4>
+    </div>
+    <div class="course-details">
+      <ul>
+        <li><i class="fas fa-check"></i> Trade with Hunter indicators</li>
+        <li><i class="fas fa-check"></i> Detailed system guide</li>
+        <li><i class="fas fa-check"></i> Educational video</li>
+        <li><i class="fas fa-check"></i> Technical support</li>
+      </ul>
+    </div>
+    <div class="course-actions">
+      <a href="https://t.me/LCAV99" class="btn btn-primary" target="_blank">Buy Package</a>
+    </div>
+  </div>
+
+  <!-- Card 2: Lifetime Access -->
+  <div class="course-card featured">
+    <div class="course-badge" style="background: linear-gradient(45deg, #4CAF50, #388E3C); color: white;">Lifetime Access</div>
+    <div class="course-header">
+      <h3>Hunter Lifetime Subscription</h3>
+    </div>
+    <div class="course-price">
+      <h4>Price: <span>$1500</span></h4>
+    </div>
+    <div class="course-details">
+      <ul>
+        <li><i class="fas fa-check"></i> Full access to all Hunter indicators</li>
+        <li><i class="fas fa-check"></i> Lifetime updates</li>
+        <li><i class="fas fa-check"></i> Continuous technical support</li>
+        <li><i class="fas fa-check"></i> Instant activation after payment</li>
+      </ul>
+    </div>
+    <div class="course-actions">
+      <a href="https://t.me/LCAV99" class="btn btn-primary" target="_blank">Subscribe Now</a>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+    <!-- قسم الأسئلة الشائعة بالإنجليزية -->
+    <section class="faq-section" id="faq">
+      <div class="container">
+        <div class="section-header">
+          <h2>Frequently Asked Questions</h2>
+        </div>
+        <div class="faq-items">
+          <details>
+            <summary>How do I purchase the trading indicator?</summary>
+            <p>To purchase the system, click on the "Buy Package" button in the purchase section and you will be redirected to a Telegram link.</p>
+          </details>
+          <details>
+            <summary>Is technical support available after purchase?</summary>
+            <p>Yes, we offer direct support for 3 days after purchase.</p>
+          </details>
+          <details>
+            <summary>Does the system require prior experience?</summary>
+            <p>No, the system is designed for both beginners and pros, and includes a guide and tutorial video.</p>
+          </details>
+          <details>
+            <summary>What payment methods are available?</summary>
+            <p>We support payment via USDT , BTCUSD</p>
+          </details>
+          <details>
+            <summary>Does the system work on all timeframes and assets?</summary>
+            <p>Yes, the system is designed to work on all different assets and timeframes.</p>
+          </details>
+          <details>
+            <summary>How do I receive the system after purchase?</summary>
+            <p>The system will be activated on your TradingView account.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-logo">
+            <h3>Hunter</h3>
+            <p>Trade smartly with the Hunter system</p>
+          </div>
+          <div class="footer-links">
+           
+            <h4>Quick Links</h4>
+            <ul>
+              <li><a href="#home">Home</a></li>
+              <li><a href="#courses">Strategy</a></li>
+              <li><a href="#features">Features</a></li>
+              <li><a href="#faq">FAQ</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy;  Programmed by Ayham Anwar Al-Karkh Professional</p>
+        </div>
+      </div> <!-- .container -->
+    </footer> <!-- .footer -->
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // تفعيل القائمة في الأجهزة المحمولة
+      const mobileMenuBtns = document.querySelectorAll('.mobile-menu-btn');
+      const mainNavs = document.querySelectorAll('.main-nav');
+      const closeMenuBtns = document.querySelectorAll('.close-menu');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const body = document.body;
+
+      function toggleMenu(event) {
+        const clickedBtn = event.currentTarget;
+        const currentHeader = clickedBtn.closest('header');
+        const currentNav = currentHeader.querySelector('.main-nav');
+        
+        currentNav.classList.toggle('active');
+        overlay.classList.toggle('active');
+        clickedBtn.classList.toggle('active');
+        body.style.overflow = currentNav.classList.contains('active') ? 'hidden' : '';
+      }
+
+      // تهيئة الخرائط
+      let mapAr, mapEn;
+      const darkLayerUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+      const lightLayerUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+      const tileOptions = {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+          subdomains: 'abcd',
+          maxZoom: 19
+      };
+
+      mapAr = L.map('map-background-ar', { zoomControl: false, attributionControl: false }).setView([24.7, 46.7], 4);
+      mapEn = L.map('map-background-en', { zoomControl: false, attributionControl: false }).setView([24.7, 46.7], 4);
+
+      // إضافة الطبقة الافتراضية (الداكنة)
+      L.tileLayer(darkLayerUrl, tileOptions).addTo(mapAr);
+      L.tileLayer(darkLayerUrl, tileOptions).addTo(mapEn);
+
+      // إضافة مستمعي الأحداث لجميع أزرار القائمة
+      mobileMenuBtns.forEach(btn => {
+        btn.addEventListener('click', toggleMenu);
+      });
+
+      // إضافة مستمعي الأحداث لجميع أزرار الإغلاق
+      closeMenuBtns.forEach(btn => {
+        btn.addEventListener('click', toggleMenu);
+      });
+
+      overlay.addEventListener('click', () => {
+        mainNavs.forEach(nav => nav.classList.remove('active'));
+        mobileMenuBtns.forEach(btn => btn.classList.remove('active'));
+        overlay.classList.remove('active');
+        body.style.overflow = '';
+      });
+
+      // إغلاق القائمة عند النقر على أي رابط
+      document.querySelectorAll('.main-nav a').forEach(link => {
+        link.addEventListener('click', () => {
+          const currentNav = link.closest('.main-nav');
+          const currentBtn = currentNav.parentElement.querySelector('.mobile-menu-btn');
+          
+          if (currentNav.classList.contains('active')) {
+            currentNav.classList.remove('active');
+            currentBtn.classList.remove('active');
+            overlay.classList.remove('active');
+            body.style.overflow = '';
+          }
+        });
+      });
+
+      // وظائف تبديل اللغة
+      function switchToArabic() {
+        document.documentElement.lang = 'ar';
+        document.documentElement.dir = 'rtl';
+        document.getElementById('header-ar').style.display = 'block';
+        document.getElementById('header-en').style.display = 'none';
+        document.getElementById('content-ar').style.display = 'block';
+        document.getElementById('content-en').style.display = 'none';
+
+        // إظهار وإخفاء قسم البوت حسب اللغة
+        document.getElementById('hunter-fx-bot-ar').style.display = 'block';
+        if(document.getElementById('hunter-fx-bot-en')) {
+          document.getElementById('hunter-fx-bot-en').style.display = 'none';
+        }
+        
+        // تحديث الروابط النشطة
+        document.querySelectorAll('[id^="ar-link"]').forEach(link => link.classList.add('active'));
+        document.querySelectorAll('[id^="en-link"]').forEach(link => link.classList.remove('active'));
+
+        // إعادة تحميل الخريطة لضمان عرضها بشكل صحيح
+        setTimeout(() => mapAr.invalidateSize(), 100);
+      }
+
+      function switchToEnglish() {
+        document.documentElement.lang = 'en';
+        document.documentElement.dir = 'ltr';
+        document.getElementById('header-ar').style.display = 'none';
+        document.getElementById('header-en').style.display = 'block';
+        document.getElementById('content-ar').style.display = 'none';
+        document.getElementById('content-en').style.display = 'block';
+
+        // إظهار وإخفاء قسم البوت حسب اللغة
+        document.getElementById('hunter-fx-bot-ar').style.display = 'none';
+        if(document.getElementById('hunter-fx-bot-en')) {
+          document.getElementById('hunter-fx-bot-en').style.display = 'block';
+        }
+        
+        // تحديث الروابط النشطة
+        document.querySelectorAll('[id^="ar-link"]').forEach(link => link.classList.remove('active'));
+        document.querySelectorAll('[id^="en-link"]').forEach(link => link.classList.add('active'));
+
+        // إعادة تحميل الخريطة لضمان عرضها بشكل صحيح
+        setTimeout(() => mapEn.invalidateSize(), 100);
+      }
+
+      // إضافة مستمعي الأحداث لروابط اللغة
+      document.querySelectorAll('[id^="ar-link"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          switchToArabic();
+        });
+      });
+
+      document.querySelectorAll('[id^="en-link"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          switchToEnglish();
+        });
+      });
+
+      // تحديث تبديل الوضع للجوال وسطح المكتب
+      function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        
+        // تحديث الأيقونات والنصوص
+        document.querySelectorAll('.mode-toggle i').forEach(icon => {
+          icon.className = isDarkMode ? 'fas fa-sun' : 'fas fa-moon';
+        });
+        
+        document.querySelectorAll('.mobile-mode-toggle .toggle-switch span').forEach(text => {
+          text.textContent = isDarkMode ? 
+            (document.documentElement.lang === 'ar' ? 'الوضع الفاتح' : 'Light Mode') :
+            (document.documentElement.lang === 'ar' ? 'الوضع الداكن' : 'Dark Mode');
+        });
+        
+        // تحديث شعار الموقع
+        document.querySelectorAll('.dark-logo').forEach(logo => {
+          logo.style.display = isDarkMode ? 'block' : 'none';
+        });
+        document.querySelectorAll('.light-logo').forEach(logo => {
+          logo.style.display = isDarkMode ? 'none' : 'block';
+        });
+        
+        // تحديث شريط TradingView
+        document.querySelectorAll('.light-mode-widget').forEach(widget => {
+          widget.style.display = isDarkMode ? 'none' : 'block';
+        });
+        document.querySelectorAll('.dark-mode-widget').forEach(widget => {
+          widget.style.display = isDarkMode ? 'block' : 'none';
+        });
+
+        // تحديث طبقة الخريطة
+        [mapAr, mapEn].forEach(map => {
+            if (map) {
+                map.eachLayer(function(layer) {
+                    map.removeLayer(layer);
+                });
+                L.tileLayer(isDarkMode ? darkLayerUrl : lightLayerUrl, tileOptions).addTo(map);
+            }
+        });
+
+        // تحديث صور العرض
+        document.querySelectorAll('.dark-mode-img').forEach(img => {
+          img.style.display = isDarkMode ? 'block' : 'none';
+        });
+        document.querySelectorAll('.light-mode-img').forEach(img => {
+          img.style.display = isDarkMode ? 'none' : 'block';
+        });
+
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+      }
+
+      // إضافة مستمعي الأحداث لزر تبديل الوضع
+      document.querySelectorAll('.mode-toggle, .mobile-mode-toggle .toggle-switch').forEach(toggle => {
+        toggle.addEventListener('click', toggleDarkMode);
+      });
+
+      // زر العودة للأعلى
+      const scrollToTopBtn = document.querySelector('.scroll-to-top');
+      
+      window.addEventListener('scroll', () => {
+        if (window.pageYOffset > 300 && !document.querySelector('.main-nav.active')) {
+          scrollToTopBtn.style.opacity = '1';
+          scrollToTopBtn.style.visibility = 'visible';
+        } else {
+          scrollToTopBtn.style.opacity = '0';
+          scrollToTopBtn.style.visibility = 'hidden';
+        }
+      });
+
+      scrollToTopBtn.addEventListener('click', () => {
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      });
+
+      // التحقق من وضع الصيانة
+      function checkMaintenanceMode() {
+        const maintenanceMode = localStorage.getItem('maintenanceMode') === 'true';
+        if (maintenanceMode) {
+          window.location.href = 'maintenance.html';
+        }
+      }
+
+      // تحديث السعر المعروض
+      function updateDisplayPrice() {
+        const priceEl = document.getElementById('displayPrice');
+        if (priceEl) {
+          const price = localStorage.getItem('currentPrice') || '100';
+          priceEl.textContent = price;
+        }
+      }
+
+      // تشغيل الدوال عند تحميل الصفحة
+      checkMaintenanceMode();
+      updateDisplayPrice();
+
+      // التأكد من إظهار القسم الصحيح عند التحميل الأولي
+      if (document.documentElement.lang === 'en') {
+        switchToEnglish();
+      } else {
+        switchToArabic();
+      }
+
+
+      // تطبيق الثيم المحفوظ
+      if (localStorage.getItem('theme') === 'light') {
+        toggleDarkMode(); // سيقوم بالتبديل من الداكن (الافتراضي) إلى الفاتح
+      }
+    });
+  </script>
+</body>
+</html>
